@@ -17,8 +17,10 @@
 module Database.Esqueleto.Internal.Sql
   ( -- * The pretty face
     SqlQuery
-  , SqlExpr
+  , SqlExpr(..)
   , SqlEntity
+  , OrderByType(..)
+  , NeedParens(..)
   , select
   , selectSource
   , selectDistinct
