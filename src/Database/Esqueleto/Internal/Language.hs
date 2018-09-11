@@ -637,7 +637,7 @@ instance Functor Value where
 newtype ValueList a = ValueList a deriving (Eq, Ord, Show, Typeable)
 
 
--- | A wrapper type for for any @expr (Value a)@ for all a.
+-- | A wrapper type for any @expr (Value a)@ for all a.
 data SomeValue expr where
   SomeValue :: Esqueleto query expr backend => expr (Value a) -> SomeValue expr
 

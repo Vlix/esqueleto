@@ -12,14 +12,14 @@ module Database.Esqueleto.PostgreSQL
   , now_
   ) where
 
-import Database.Esqueleto.Internal.Language
+import Database.Esqueleto.Internal.Language hiding (distinct)
 import Database.Esqueleto.Internal.Sql
 import Data.Time.Clock (UTCTime)
 
 -- | (@array_agg@) Concatenate distinct input values, including @NULL@s, into
 -- an array.
 --
--- /Since: 2.5.3/
+-- /Since: 2.6.0/
 arrayAggDistinct :: SqlExpr (Value a) -> SqlExpr (Value [a])
 arrayAggDistinct = arrayAgg . distinct
   where
@@ -35,9 +35,9 @@ arrayAgg = unsafeSqlFunction "array_agg"
 -- | (@array_remove@) Remove all elements equal to the given value from the
 -- array.
 --
--- /Since: 2.5.3/
+-- /Since: 2.6.0/
 arrayRemove :: SqlExpr (Value [a]) -> SqlExpr (Value a) -> SqlExpr (Value [a])
-arrayRemove arr elem = unsafeSqlFunction "array_remove" (arr, elem)
+arrayRemove arr elem' = unsafeSqlFunction "array_remove" (arr, elem')
 
 -- | (@string_agg@) Concatenate input values separated by a
 -- delimiter.
@@ -58,5 +58,8 @@ stringAgg expr delim = unsafeSqlFunction "string_agg" (expr, delim)
 chr :: SqlString s => SqlExpr (Value Int) -> SqlExpr (Value s)
 chr = unsafeSqlFunction "chr"
 
+-- | (@now_@) Return current date and time. (Start of current transaction)
+--
+-- /Since: 2.6.0/
 now_ :: SqlExpr (Value UTCTime)
 now_ = unsafeSqlValue "NOW()"
