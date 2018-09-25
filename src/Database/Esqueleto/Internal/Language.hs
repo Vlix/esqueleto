@@ -35,6 +35,7 @@ module Database.Esqueleto.Internal.Language
     -- * The guts
   , JoinKind(..)
   , IsJoinKind(..)
+  , BackendCompatible(..)
   , PreprocessedFrom
   , From
   , FromPreprocess
@@ -52,7 +53,6 @@ import Text.Blaze.Html (Html)
 import qualified Data.ByteString as B
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
-
 
 -- | Finally tagless representation of @esqueleto@'s EDSL.
 class (Functor query, Applicative query, Monad query) =>
@@ -72,12 +72,12 @@ class (Functor query, Applicative query, Monad query) =>
   --   @JOIN@.
   fromStart
     :: ( PersistEntity a
-       , PersistEntityBackend a ~ backend )
+       , BackendCompatible backend (PersistEntityBackend a) )
     => query (expr (PreprocessedFrom (expr (Entity a))))
   -- | (Internal) Same as 'fromStart', but entity may be missing.
   fromStartMaybe
     :: ( PersistEntity a
-       , PersistEntityBackend a ~ backend )
+       , BackendCompatible backend (PersistEntityBackend a) )
     => query (expr (PreprocessedFrom (expr (Maybe (Entity a)))))
   -- | (Internal) Do a @JOIN@.
   fromJoin
@@ -292,12 +292,15 @@ class (Functor query, Applicative query, Monad query) =>
   -- is guaranteed to return just one row.
   sub_select :: PersistField a => query (expr (Value a)) -> expr (Value a)
 
-  -- | Same as 'sub_select' but using @SELECT DISTINCT@.
-  sub_selectDistinct :: PersistField a => query (expr (Value a)) -> expr (Value a)
-
   -- | Project a field of an entity.
   (^.) :: (PersistEntity val, PersistField typ) =>
           expr (Entity val) -> EntityField val typ -> expr (Value typ)
+
+  -- | Project an expression that may be null, guarding against null cases.
+  withNonNull :: PersistField typ
+              => expr (Value (Maybe typ))
+              -> (expr (Value typ) -> query a)
+              -> query a
 
   -- | Project a field of an entity that may be null.
   (?.) :: (PersistEntity val, PersistField typ) =>
@@ -440,9 +443,6 @@ class (Functor query, Applicative query, Monad query) =>
   -- | Execute a subquery @SELECT@ in an expression.  Returns a
   -- list of values.
   subList_select :: PersistField a => query (expr (Value a)) -> expr (ValueList a)
-
-  -- | Same as 'sublist_select' but using @SELECT DISTINCT@.
-  subList_selectDistinct :: PersistField a => query (expr (Value a)) -> expr (ValueList a)
 
   -- | Lift a list of constant value from Haskell-land to the query.
   valList :: PersistField typ => [typ] -> expr (ValueList typ)
@@ -589,9 +589,9 @@ class (Functor query, Applicative query, Monad query) =>
   -- /Since: 2.4.3/
   toBaseId :: ToBaseId ent => expr (Value (Key ent)) -> expr (Value (Key (BaseEnt ent)))
 
-{-# DEPRECATED sub_selectDistinct "Since 2.2.4: use 'sub_select' and 'distinct'." #-}
-{-# DEPRECATED subList_selectDistinct "Since 2.2.4: use 'subList_select' and 'distinct'." #-}
+{-# DEPRECATED random_ "Since 2.6.0: `random_` is not uniform across all databases! Please use a specific one such as 'Database.Esqueleto.PostgreSQL.random_', 'Database.Esqueleto.MySQL.random_', or 'Database.Esqueleto.SQLite.random_'" #-}
 
+{-# DEPRECATED rand "Since 2.6.0: `rand` ordering function is not uniform across all databases! To avoid accidental partiality it will be removed in the next major version." #-}
 
 -- Fixity declarations
 infixl 9 ^.
@@ -630,6 +630,13 @@ newtype Value a = Value { unValue :: a } deriving (Eq, Ord, Show, Typeable)
 instance Functor Value where
   fmap f (Value a) = Value (f a)
 
+instance Applicative Value where
+  (<*>) (Value f) (Value a) = Value (f a)
+  pure = Value
+
+instance Monad Value where
+  (>>=) x f = valueJoin $ fmap f x
+    where valueJoin (Value v) = v
 
 -- | A list of single values.  There's a limited set of functions
 -- able to work with this data type (such as 'subList_select',
@@ -1041,13 +1048,13 @@ class Esqueleto query expr backend => FromPreprocess query expr backend a where
 
 instance ( Esqueleto query expr backend
          , PersistEntity val
-         , PersistEntityBackend val ~ backend
+         , BackendCompatible backend (PersistEntityBackend val)
          ) => FromPreprocess query expr backend (expr (Entity val)) where
   fromPreprocess = fromStart
 
 instance ( Esqueleto query expr backend
          , PersistEntity val
-         , PersistEntityBackend val ~ backend
+         , BackendCompatible backend (PersistEntityBackend val)
          ) => FromPreprocess query expr backend (expr (Maybe (Entity val))) where
   fromPreprocess = fromStartMaybe
 

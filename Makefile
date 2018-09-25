@@ -1,10 +1,8 @@
-build: build-7.10
+build:
+	stack build
 
-build-7.10:
-	STACK_YAML="stack-7.10.yaml" stack build
-
-build-8.0:
-	STACK_YAML="stack-8.0.yaml" stack build
+build-tests:
+	stack build --test --no-run-tests
 
 ghci:
 	stack ghci
@@ -14,13 +12,16 @@ test:
 
 # Intended for use in local dev
 test-postgresql: reset-pgsql
-	stack test --flag esqueleto:postgresql
+	stack test esqueleto:postgresql
 
 test-mysql:
-	stack test --flag esqueleto:mysql
+	stack test esqueleto:mysql
 
 test-ghci:
-	stack ghci esqueleto:test:test
+	stack ghci esqueleto:test:sqlite
+
+test-ghcid:
+	ghcid -c "stack ghci --ghci-options -fobject-code esqueleto:test:sqlite"
 
 # sudo -u postgres createuser -s - esqueleto-test
 reset-pgsql:

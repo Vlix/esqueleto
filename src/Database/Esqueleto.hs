@@ -40,8 +40,8 @@ module Database.Esqueleto
     -- * @esqueleto@'s Language
     Esqueleto( where_, on, groupBy, orderBy, rand, asc, desc, limit, offset
              , distinct, distinctOn, don, distinctOnOrderBy, having, locking
-             , sub_select, sub_selectDistinct, (^.), (?.)
-             , val, isNothing, just, nothing, joinV
+             , sub_select, (^.), (?.)
+             , val, isNothing, just, nothing, joinV, withNonNull
              , countRows, count, countDistinct
              , not_, (==.), (>=.), (>.), (<=.), (<.), (!=.), (&&.), (||.)
              , (+.), (-.), (/.), (*.)
@@ -49,7 +49,7 @@ module Database.Esqueleto
              , min_, max_, sum_, avg_, castNum, castNumM
              , coalesce, coalesceDefault
              , lower_, like, ilike, (%), concat_, (++.), castString
-             , subList_select, subList_selectDistinct, valList, justList
+             , subList_select, valList, justList
              , in_, notIn, exists, notExists
              , set, (=.), (+=.), (-=.), (*=.), (/=.)
              , case_, toBaseId)
@@ -59,7 +59,6 @@ module Database.Esqueleto
   , else_
   , from
   , Value(..)
-  , unValue
   , ValueList(..)
   , OrderBy
   , DistinctOn
@@ -78,16 +77,13 @@ module Database.Esqueleto
   , SqlExpr
   , SqlEntity
   , select
-  , selectDistinct
   , selectSource
-  , selectDistinctSource
   , delete
   , deleteCount
   , update
   , updateCount
   , insertSelect
   , insertSelectCount
-  , insertSelectDistinct
   , (<#)
   , (<&>)
     -- * Internal.Language
@@ -315,7 +311,7 @@ import qualified Database.Persist
 -- SELECT P1.*, Follow.*, P2.*
 -- FROM Person AS P1
 -- INNER JOIN Follow ON P1.id = Follow.follower
--- INNER JOIN P2 ON P2.id = Follow.followed
+-- INNER JOIN Person AS P2 ON P2.id = Follow.followed
 -- @
 --
 -- In @esqueleto@, we may write the same query above as:

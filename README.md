@@ -192,7 +192,7 @@ which generates this SQL:
 SELECT P1.*, Follow.*, P2.*
 FROM Person AS P1
 INNER JOIN Follow ON P1.id = Follow.follower
-INNER JOIN P2 ON P2.id = Follow.followed
+INNER JOIN Person AS P2 ON P2.id = Follow.followed
 ```
 
 Note carefully that the order of the ON clauses is reversed! You're required to write your `on`s in reverse order because that helps composability (see the documentation of `on` for more details). 
@@ -262,7 +262,7 @@ brew install postgresql
 brew install libpq
 ```
 
-Detailed instructions on the Postgres wike [here](https://wiki.postgresql.org/wiki/Detailed_installation_guides) 
+Detailed instructions on the Postgres wiki [here](https://wiki.postgresql.org/wiki/Detailed_installation_guides)
 
 The connection details are located near the bottom of the [test/Test.hs](test/Test.hs) file:
 
@@ -295,4 +295,4 @@ postgres=# \password esqutest
 ```
 
 
-Now ```stack test --flag esqueleto:postgresql``` should envoke and pass all the Postgres tests.
+Now ```stack test --flag esqueleto:postgresql``` should invoke and pass all the Postgres tests.
