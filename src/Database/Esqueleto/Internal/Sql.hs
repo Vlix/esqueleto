@@ -39,6 +39,8 @@ module Database.Esqueleto.Internal.Sql
   , unsafeSqlExtractSubField
   , UnsafeSqlFunctionArgument
   , OrderByClause
+  -- TODO: HACK
+  , OrderByType(..)
   , rawSelectSource
   , runSource
   , rawEsqueleto
