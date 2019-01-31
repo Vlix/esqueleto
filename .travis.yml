@@ -18,6 +18,7 @@ addons:
 env:
  - GHCVER=8.2
  - GHCVER=8.4
+ - GHCVER=8.6
 
 install:
   - export STACK_YAML=stack-$GHCVER.yaml
@@ -27,6 +28,7 @@ install:
   - stack --version
   - echo "CREATE USER esqutest WITH PASSWORD 'esqutest';" | psql postgres
   - createdb -O esqutest esqutest
+  - mysql -e 'CREATE DATABASE esqutest;'
 
 script:
   - stack setup
@@ -35,6 +37,8 @@ script:
   - stack test -- esqueleto:postgresql
   - stack test -- esqueleto:sqlite
   - stack test -- esqueleto:mysql || exit 0  # TODO: Remove that exit 0 when mysql tests are checking correctly
+  - cd test/expected-compile-failures/
+  - bash test.sh
 
 cache:
   directories:

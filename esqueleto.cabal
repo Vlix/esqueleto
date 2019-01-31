@@ -1,8 +1,10 @@
--- This file has been generated from package.yaml by hpack version 0.20.0.
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 34b1b8836c9ae7acb038d0e808674ddb4c2ab696d37e5b117f61acad02ed6daf
+-- hash: c5408ff1923a2a70cf9c7b5590f83d724453768845c1dd1d92888c177dfad357
 
 name:           esqueleto
 version:        2.6.0
@@ -22,13 +24,22 @@ copyright:      (c) 2012-2016 Felipe Almeida Lessa
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
-cabal-version:  >= 1.10
 
 source-repository head
   type: git
   location: git://github.com/bitemyapp/esqueleto.git
 
 library
+  exposed-modules:
+      Database.Esqueleto
+      Database.Esqueleto.Internal.Language
+      Database.Esqueleto.Internal.Sql
+      Database.Esqueleto.MySQL
+      Database.Esqueleto.PostgreSQL
+      Database.Esqueleto.SQLite
+  other-modules:
+      Database.Esqueleto.Internal.PersistentImport
+      Paths_esqueleto
   hs-source-dirs:
       src/
   build-depends:
@@ -37,7 +48,7 @@ library
     , bytestring
     , conduit >=1.3
     , monad-logger
-    , persistent >=2.8.0 && <2.9
+    , persistent >=2.8.0 && <2.10
     , resourcet >=1.2
     , tagged >=0.2
     , text >=0.11 && <1.3
@@ -49,21 +60,14 @@ library
     ghc-options: -Wall -Wno-redundant-constraints
   else
     ghc-options: -Wall
-  exposed-modules:
-      Database.Esqueleto
-      Database.Esqueleto.Internal.Language
-      Database.Esqueleto.Internal.Sql
-      Database.Esqueleto.MySQL
-      Database.Esqueleto.PostgreSQL
-      Database.Esqueleto.SQLite
-  other-modules:
-      Database.Esqueleto.Internal.PersistentImport
-      Paths_esqueleto
   default-language: Haskell2010
 
 test-suite mysql
   type: exitcode-stdio-1.0
   main-is: MySQL/Test.hs
+  other-modules:
+      Common.Test
+      Paths_esqueleto
   hs-source-dirs:
       test
   ghc-options: -Wall
@@ -78,7 +82,7 @@ test-suite mysql
     , monad-logger
     , mysql
     , mysql-simple
-    , persistent >=2.8.0 && <2.9
+    , persistent >=2.8.0 && <2.10
     , persistent-mysql
     , persistent-template
     , resourcet >=1.2
@@ -88,14 +92,14 @@ test-suite mysql
     , transformers >=0.2
     , unliftio
     , unordered-containers >=0.2
-  other-modules:
-      Common.Test
-      Paths_esqueleto
   default-language: Haskell2010
 
 test-suite postgresql
   type: exitcode-stdio-1.0
   main-is: PostgreSQL/Test.hs
+  other-modules:
+      Common.Test
+      Paths_esqueleto
   hs-source-dirs:
       test
   ghc-options: -Wall
@@ -108,7 +112,7 @@ test-suite postgresql
     , esqueleto
     , hspec
     , monad-logger
-    , persistent >=2.8.0 && <2.9
+    , persistent >=2.8.0 && <2.10
     , persistent-postgresql
     , persistent-template
     , postgresql-libpq
@@ -120,14 +124,14 @@ test-suite postgresql
     , transformers >=0.2
     , unliftio
     , unordered-containers >=0.2
-  other-modules:
-      Common.Test
-      Paths_esqueleto
   default-language: Haskell2010
 
 test-suite sqlite
   type: exitcode-stdio-1.0
   main-is: SQLite/Test.hs
+  other-modules:
+      Common.Test
+      Paths_esqueleto
   hs-source-dirs:
       test
   ghc-options: -Wall
@@ -140,7 +144,7 @@ test-suite sqlite
     , esqueleto
     , hspec
     , monad-logger
-    , persistent >=2.8.0 && <2.9
+    , persistent >=2.8.0 && <2.10
     , persistent-sqlite
     , persistent-template
     , resourcet >=1.2
@@ -150,7 +154,4 @@ test-suite sqlite
     , transformers >=0.2
     , unliftio
     , unordered-containers >=0.2
-  other-modules:
-      Common.Test
-      Paths_esqueleto
   default-language: Haskell2010

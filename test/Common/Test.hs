@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds  #-}
 {-# OPTIONS_GHC -fno-warn-deprecations  #-}
 {-# LANGUAGE ConstraintKinds
+           , CPP
            , EmptyDataDecls
            , FlexibleContexts
            , FlexibleInstances
@@ -49,6 +50,9 @@ module Common.Test
     ) where
 
 import Control.Monad (forM_, replicateM, replicateM_, void)
+#if __GLASGOW_HASKELL__ >= 806
+import Control.Monad.Fail (MonadFail)
+#endif
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Control.Monad.Logger (MonadLogger (..), NoLoggingT, runNoLoggingT)
 import Control.Monad.Trans.Reader (ReaderT)
@@ -213,7 +217,6 @@ testSelect run = do
       run $ do
         ret <- select $ return nothing
         liftIO $ ret `shouldBe` [ Value (Nothing :: Maybe Int) ]
-
 
 
 testSelectSource :: Run -> Spec
@@ -1053,6 +1056,31 @@ testUpdate run = do
                                 , (Entity p3k p3, Value 7) ]
 
 
+-- we only care that this compiles. check that SqlWriteT doesn't fail on
+-- updates.
+testSqlWriteT :: MonadIO m => SqlWriteT m ()
+testSqlWriteT =
+  update $ \p -> do
+    set p [ PersonAge =. just (val 6) ]
+
+-- we only care that this compiles. checks that the SqlWriteT monad can run
+-- select queries.
+testSqlWriteTRead :: MonadIO m => SqlWriteT m [(Value (Key Lord), Value Int)]
+testSqlWriteTRead =
+  select $
+  from $ \ ( lord `InnerJoin` deed ) -> do
+  on $ lord ^. LordId ==. deed ^. DeedOwnerId
+  groupBy (lord ^. LordId)
+  return (lord ^. LordId, count $ deed ^. DeedId)
+
+-- we only care that this compiles checks that SqlReadT allows
+testSqlReadT :: MonadIO m => SqlReadT m [(Value (Key Lord), Value Int)]
+testSqlReadT =
+  select $
+  from $ \ ( lord `InnerJoin` deed ) -> do
+  on $ lord ^. LordId ==. deed ^. DeedOwnerId
+  groupBy (lord ^. LordId)
+  return (lord ^. LordId, count $ deed ^. DeedId)
 
 testListOfValues :: Run -> Spec
 testListOfValues run = do
@@ -1333,9 +1361,10 @@ testLocking withConn = do
           let expected = complex <> "\n" <> syntax
           (with1, with2, with3) `shouldBe` (expected, expected, expected)
 
-    it "looks sane for ForUpdate"       $ sanityCheck ForUpdate       "FOR UPDATE"
-    it "looks sane for ForShare"        $ sanityCheck ForShare        "FOR SHARE"
-    it "looks sane for LockInShareMode" $ sanityCheck LockInShareMode "LOCK IN SHARE MODE"
+    it "looks sane for ForUpdate"           $ sanityCheck ForUpdate           "FOR UPDATE"
+    it "looks sane for ForUpdateSkipLocked" $ sanityCheck ForUpdateSkipLocked "FOR UPDATE SKIP LOCKED"
+    it "looks sane for ForShare"            $ sanityCheck ForShare            "FOR SHARE"
+    it "looks sane for LockInShareMode"     $ sanityCheck LockInShareMode     "LOCK IN SHARE MODE"
 
 
 
@@ -1401,7 +1430,11 @@ type RunDbMonad m = ( MonadUnliftIO m
                     , MonadLogger m
                     , MonadThrow m )
 
-type Run = forall a. (forall m. RunDbMonad m => SqlPersistT (R.ResourceT m) a) -> IO a
+#if __GLASGOW_HASKELL__ >= 806
+type Run = forall a. (forall m. (RunDbMonad m, MonadFail m) => SqlPersistT (R.ResourceT m) a) -> IO a
+#else
+type Run = forall a. (forall m. (RunDbMonad m) => SqlPersistT (R.ResourceT m) a) -> IO a
+#endif
 
 type WithConn m a = RunDbMonad m => (SqlBackend -> R.ResourceT m a) -> m a
 
