@@ -1,3 +1,26 @@
+Unreleased
+========
+
+3.0.0
+=======
+
+- @parsonsmatt
+  - [#122](https://github.com/bitemyapp/esqueleto/pull/122): Support `persistent-2.10.0`. This is a breaking change due to the removal of deprecated exports from the `persistent` library.
+  - [#113](https://github.com/bitemyapp/esqueleto/pull/113): Remove the `esqueleto` type class. To migrate here, use `SqlExpr`, `SqlQuery`, and `SqlBackend` instead of using the polymorphic `Esqueleto sqlExpr sqlQuery sqlBackend => ...` types.
+
+2.7.0
+=======
+
+- @parsonsmatt
+  - [#117](https://github.com/bitemyapp/esqueleto/pull/117): Removed `sqlQQ` and `executeQQ` functions from export, fixing doc build and building with `persistent` >= 2.9
+
+2.6.1
+=======
+
+- @ChrisCoffey
+  - [#114](https://github.com/bitemyapp/esqueleto/pull/114): Fix Haddock by
+    working around an upstream bug.
+
 2.6.0
 ========
 - @bitemyapp
