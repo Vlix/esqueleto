@@ -70,3 +70,5 @@ module Database.Esqueleto.Internal.Sql
   , toArgList
   , builderToText
   ) where
+
+import Database.Esqueleto.Internal.Internal

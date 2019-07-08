@@ -41,11 +41,14 @@ import Data.Semigroup
 #endif
 import qualified Data.Monoid as Monoid
 import Data.Proxy (Proxy(..))
+import Data.Typeable (Typeable)
 import Database.Esqueleto.Internal.PersistentImport
 import Database.Persist.Sql.Util (entityColumnNames, entityColumnCount, parseEntityValues, isIdField, hasCompositeKey)
+import Text.Blaze.Html (Html)
 import qualified Control.Monad.Trans.Reader as R
 import qualified Control.Monad.Trans.State as S
 import qualified Control.Monad.Trans.Writer as W
+import qualified Data.ByteString as B
 import qualified Data.Conduit as C
 import qualified Data.Conduit.List as CL
 import qualified Data.HashSet as HS
@@ -53,15 +56,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Builder as TLB
 
-import Control.Exception (Exception)
-import Data.Int (Int64)
-import Data.Typeable (Typeable)
-import Database.Esqueleto.Internal.PersistentImport
-import Text.Blaze.Html (Html)
 
-import qualified Data.ByteString as B
-import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
 
 -- | (Internal) Start a 'from' query with an entity. 'from'
 -- does two kinds of magic using 'fromStart', 'fromJoin' and
@@ -86,8 +81,8 @@ fromStart = x
       let ed = entityDef (getVal x)
       ident <- newIdentFor (entityDB ed)
       let ret   = EEntity ident
-          from_ = FromStart ident ed
-      return (EPreprocessedFrom ret from_)
+          from' = FromStart ident ed
+      return (EPreprocessedFrom ret from')
     getVal :: SqlQuery (SqlExpr (PreprocessedFrom (SqlExpr (Entity a)))) -> Proxy a
     getVal = const Proxy
 
@@ -100,7 +95,7 @@ fromStartMaybe = maybelize <$> fromStart
   where
     maybelize :: SqlExpr (PreprocessedFrom (SqlExpr (Entity a)))
               -> SqlExpr (PreprocessedFrom (SqlExpr (Maybe (Entity a))))
-    maybelize (EPreprocessedFrom ret from_) = EPreprocessedFrom (EMaybe ret) from_
+    maybelize (EPreprocessedFrom ret from') = EPreprocessedFrom (EMaybe ret) from'
 
 -- | (Internal) Do a @JOIN@.
 fromJoin
@@ -111,18 +106,18 @@ fromJoin
 fromJoin (EPreprocessedFrom lhsRet lhsFrom)
          (EPreprocessedFrom rhsRet rhsFrom) = Q $ do
   let ret   = smartJoin lhsRet rhsRet
-      from_ = FromJoin lhsFrom             -- LHS
+      from' = FromJoin lhsFrom             -- LHS
                        (reifyJoinKind ret) -- JOIN
                        rhsFrom             -- RHS
                        Nothing             -- ON
-  return (EPreprocessedFrom ret from_)
+  return (EPreprocessedFrom ret from')
 
 -- | (Internal) Finish a @JOIN@.
 fromFinish
   :: SqlExpr (PreprocessedFrom a)
   -> SqlQuery a
-fromFinish (EPreprocessedFrom ret from_) = Q $ do
-  W.tell mempty { sdFromClause = [from_] }
+fromFinish (EPreprocessedFrom ret from') = Q $ do
+  W.tell mempty { sdFromClause = [from'] }
   return ret
 
 -- | @WHERE@ clause: restrict the query's result.
@@ -1650,6 +1645,24 @@ unsafeSqlBinOp op (ERaw p1 f1) (ERaw p2 f2) = ERaw Parens f
 unsafeSqlBinOp _ _ _ = throw (CompositeKeyErr SqlBinOpError)
 {-# INLINE unsafeSqlBinOp #-}
 
+-- | (Internal) Similar to `unsafeSqlBinOp`, except that the
+-- resulting `SqlExpr` won't be enclosed by parentheses.
+-- Essentilly appends two `SqlExprs` with a seperator.
+-- /VERY UNSAFE/! Only use if you know what you're doing!
+unsafeSqlAppend :: TLB.Builder -> SqlExpr (Value a) -> SqlExpr (Value b) -> SqlExpr (Value c)
+unsafeSqlAppend = unsafeSqlAppend' Never
+{-# INLINE unsafeSqlAppend #-}
+
+-- | (Internal) Base description of an `append`-like operation over `SqlExprs`.
+unsafeSqlAppend' :: NeedParens -> TLB.Builder -> SqlExpr (Value a) -> SqlExpr (Value b) -> SqlExpr (Value c)
+unsafeSqlAppend' need op (ERaw p1 f1) (ERaw p2 f2) = ERaw need f
+  where
+    f info = let (b1, vals1) = f1 info
+                 (b2, vals2) = f2 info
+             in ( parensM p1 b1 <> op <> parensM p2 b2
+                , vals1 <> vals2 )
+unsafeSqlAppend' _ _ _ _ = throw (CompositeKeyErr SqlBinOpError)
+{-# INLINE unsafeSqlAppend' #-}
 
 -- | Similar to 'unsafeSqlBinOp', but may also be applied to
 -- composite keys.  Uses the operator given as the second
